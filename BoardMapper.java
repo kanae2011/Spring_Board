@@ -13,16 +13,17 @@ public interface BoardMapper {
 	public Long getTotalRow()throws Exception;
 	
 	//2.view
-	public BoardVO view()throws Exception;
+	public BoardVO view(Long no)throws Exception;
+	
 	//2-1.조회수 1증가
 	public int increase()throws Exception;
 	
 	//3.write
-	public int write()throws Exception;
+	public int write(BoardVO vo)throws Exception;
 	
 	//4.update
-	public int update()throws Exception;
+	public int update(BoardVO vo)throws Exception;
 	
 	//5.delete
-	public int delete()throws Exception;
+	public int delete(Long no)throws Exception;
 }
