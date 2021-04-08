@@ -40,27 +40,28 @@ public class BoardServiceImpl implements BoardService{
 	}
 
 	@Override
-	public BoardVO view() throws Exception {
+	public BoardVO view(Long no) throws Exception {
 		// TODO Auto-generated method stub
-		return null;
+		log.info("view()-BoardViewService실행");
+		return mapper.view(no);
 	}
 
 	@Override
-	public int write() throws Exception {
+	public int write(BoardVO vo) throws Exception {
 		// TODO Auto-generated method stub
-		return 0;
+		return mapper.write(vo);
 	}
 
 	@Override
-	public int update() throws Exception {
+	public int update(BoardVO vo) throws Exception {
 		// TODO Auto-generated method stub
-		return 0;
+		return mapper.update(vo);
 	}
 
 	@Override
-	public int delete() throws Exception {
+	public int delete(Long no) throws Exception {
 		// TODO Auto-generated method stub
-		return 0;
+		return mapper.delete(no);
 	}
 
 }
