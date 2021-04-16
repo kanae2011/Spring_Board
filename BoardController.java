@@ -1,5 +1,7 @@
 package org.zerock.board.controller;
 
+import java.net.URLEncoder;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -73,7 +75,7 @@ public class BoardController {
 	}
 	
 	@PostMapping("/update.do")
-	//4-2.게시판 글수정 /write.do - post
+	//4-2.게시판 글수정 /update.do - post
 	public String update(BoardVO vo,RedirectAttributes rttr,PageObject pageObject) throws Exception {
 		log.info("update().vo" + vo);
 		
@@ -81,7 +83,13 @@ public class BoardController {
 		if(result == 0)throw new Exception("Board update Fasle -정보 확인 요망");
 		log.info("update().result" + result);
 		rttr.addFlashAttribute("msg", "글 수정 성공");
-		return "redirect:view.do?no=" + vo.getNo() + "&inc=0" + "&page=" + pageObject.getPage() + "&perPageNum=" + pageObject.getPerPageNum();
+		return "redirect:view.do?no=" + vo.getNo() + "&inc=0" 
+			+ "&page=" + pageObject.getPage() 
+			+ "&perPageNum=" + pageObject.getPerPageNum()
+			+ "&key=" + pageObject.getKey()
+			//URL로 요청되는 경우 서버의 한글이 적용되므로 UTF-8로 Encode시킴
+			+ "&word=" + URLEncoder.encode(pageObject.getWord(),"utf-8") 
+			;
 	}
 	
 	@PostMapping("/delete.do")
