@@ -5,13 +5,18 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.zerock.board.service.BoardService;
 import org.zerock.board.vo.BoardVO;
 
+import com.webjjang.util.PageObject;
+
 import lombok.extern.log4j.Log4j;
 
+//자동생성 - @Controller,@Service,@Repository,@Component,@RestController,@RestControllerAdvice ->Component-scan 설정 : servlet-context.xml,root-context.xml
 @Controller
 @RequestMapping("/board")
 @Log4j
@@ -19,89 +24,75 @@ public class BoardController {
 
 	private final String MODULE = "board";
 	
-	//@Setter-lombok사용, @Autowired-spring 사용
-	//대신 사용 가능한 어노테이션 : @Autowired - spring,@inject - java
-	//DI 적용시 BoardService 타입 : 1. BoardService interface 2.BoardServiceImpl class
-//	@Setter(onMethod_ = @Autowired )
+	//자동DI
 	@Autowired
-	// BoardService 상속 받아서 타입이 같은 것이 있으면 어떤 것을 넣어 줄지 결정이 안돼서 오류 - 해결
 	@Qualifier("bsi")
 	private BoardService service;
 	
-	//실행할 메소드 - list
-	//맵핑 -get방식/ list.do
+	//1.게시판 목록 -검색 /list.do - get
 	@GetMapping("/list.do")
-	public String list(Model model) throws Exception {
-		
-		log.info("list() - board List");
-		
-		//model에 데이터를 담으면 model안에 있는 request에 데이터가 담김 
-		model.addAttribute("list",service.list());
-		
-		return MODULE +  "/list";
+	//@ModelAttribute-전달 받은 변수의 값을 model에 담아서 JSP까지 보내줌. 변수 이름으로 사용
+	public String list(Model model,@ModelAttribute PageObject pageObject) throws Exception {
+		log.info("BoardController_list().pageObject : " + pageObject + "......");
+		model.addAttribute("list",service.list(pageObject));
+		return MODULE + "/list";
 	}
 	
-	//실행할 메소드 -view
-	//맵핑 -get방식/ view.do
+	//2.게시판 글보기 /view.do - get
 	@GetMapping("/view.do")
-	public String view(Model model, Long no) throws Exception {
-		
-		log.info("view().no: " + no + " - board View");
-		model.addAttribute("vo",service.view(no));
-		return MODULE + "/view";
+	//Model객체- 처리된 데이터를 JSP에 전달
+	//no,inc-숫자 타입 : 원래는 String으로 데이터 전달, 없으면 null 
+	public String view(Model model,@ModelAttribute PageObject pageObject,Long no,int inc) throws Exception {
+		log.info("BoardController_view().pageObject : " + pageObject + "......");
+		model.addAttribute("vo", service.view(no, inc));
+		return  MODULE + "/view";
 	}
 	
-	//실행할 메소드 -writeForm
-	//맵핑 -get방식/ write.do
 	@GetMapping("/write.do")
-	public String writeForm() throws Exception{
-		
-		log.info("writeForm() - board Write Form");
+	//3-1.게시판 작성 폼  /write.do - get
+	public String writeForm() {
 		return MODULE + "/write";
 	}
 	
-	//실행할 메소드 -write 처리
-	//맵핑 -post방식/ write.do
 	@PostMapping("/write.do")
-	public String write(BoardVO vo) throws Exception{
-		
-		log.info("write().vo: " + vo + " - board Write");
+	//3-2.게시판 작성 /write.do - post
+	public String write(BoardVO vo,int perPageNum, RedirectAttributes rttr) throws Exception {
+		log.info("write.vo()" + vo);
 		service.write(vo);
-		return "redirect:list.do";
+		rttr.addFlashAttribute("msg","글 작성 성공");
+		return "redirect:list.do?perPageNum=" + perPageNum;
 	}
 	
-		
-	//실행할 메소드 -updateForm
-	//맵핑 -get방식/ update.do
 	@GetMapping("/update.do")
-	public String updateForm(Model model,Long no) throws Exception{
-		
-		log.info("updateForm() - board Update Form");
-		
-		model.addAttribute("vo",service.view(no));
-		
+	//4-1.게시판 글수정 폼 /update.do - get
+	public String updateForm(Model model,Long no) throws Exception {
+		log.info("updateForm().no : " + no);
+		//JSP에 수정할 데이터를 보내야 함. 데이터가 DB에 있음
+		model.addAttribute("vo",service.view(no, 0));
 		return MODULE + "/update";
-		}
-		
-	//실행할 메소드 -update 처리
-	//맵핑 -post방식/ update.do
-	@PostMapping("/update.do")
-	public String update(BoardVO vo) throws Exception{
-		
-		log.info("update().vo : " + vo + " - board Update");
-		service.update(vo);
-		return "redirect:view.do?no=" + vo.getNo();
-		}
-		
-	//실행할 메소드 -delete
-	//맵핑 -get방식/ delete.do
-	@GetMapping("/delete.do")
-	public String deleteForm(Long no) throws Exception{
-		
-		log.info("delete().no" + no + " - board Delete Form");
-		service.delete(no);
-		
-		return "redirect:list.do";
-		}
+	}
 	
+	@PostMapping("/update.do")
+	//4-2.게시판 글수정 /write.do - post
+	public String update(BoardVO vo,RedirectAttributes rttr,PageObject pageObject) throws Exception {
+		log.info("update().vo" + vo);
+		
+		int result = service.update(vo);
+		if(result == 0)throw new Exception("Board update Fasle -정보 확인 요망");
+		log.info("update().result" + result);
+		rttr.addFlashAttribute("msg", "글 수정 성공");
+		return "redirect:view.do?no=" + vo.getNo() + "&inc=0" + "&page=" + pageObject.getPage() + "&perPageNum=" + pageObject.getPerPageNum();
+	}
+	
+	@PostMapping("/delete.do")
+	//5.게시판 글삭제
+	public String delete(BoardVO vo,int perPageNum,RedirectAttributes rttr) throws Exception {
+		log.info("delete().vo:"  + vo);
+		
+		int result = service.delete(vo);
+		//result가 0이면 비밀번호가 틀림
+		if(result == 0)throw new Exception("Board delete false - 정보확인 요망");
+		rttr.addFlashAttribute("msg", "글 삭제 성공");
+		return "redirect:list.do?perPageNum=" + perPageNum;
+	}
 }
