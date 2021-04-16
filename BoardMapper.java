@@ -7,10 +7,10 @@ import org.zerock.board.vo.BoardVO;
 public interface BoardMapper {
 
 	//1.list
-	public List<BoardVO> list()throws Exception;
+	public List<BoardVO> list(PageObject pageObject)throws Exception;
 	
 	//1-1.전체 데이터 갯수 가져오기
-	public Long getTotalRow()throws Exception;
+	public Long getTotalRow(PageObject pageObject)throws Exception;
 	
 	//2.view
 	public BoardVO view(Long no)throws Exception;
