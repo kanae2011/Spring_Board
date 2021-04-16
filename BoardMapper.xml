@@ -1,36 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- NameSpace="Package + interface" -->
 <mapper namespace="org.zerock.board.mapper.BoardMapper">
-
-<!-- 	1.BOARD list -->
+	<!-- 1-1.게시판 목록 -->
+	<!-- id="method" -->
 	<select id="list" resultType="org.zerock.board.vo.BoardVO">
-	SELECT RNUM,NO,TITLE,WRITER,WRITEDATE,HIT 
-	FROM (
-	SELECT ROWNUM RNUM,NO,TITLE,WRITER,WRITEDATE,HIT 
-	FROM (
-	SELECT NO,TITLE,WRITER,WRITEDATE,HIT FROM BOARD ORDER BY NO DESC
-	))WHERE RNUM BETWEEN 1 AND 10 
+		SELECT RNUM,NO,TITLE,WRITER,WRITEDATE,HIT
+			FROM(
+				SELECT ROWNUM RNUM,NO,TITLE,WRITER,WRITEDATE,HIT
+			FROM(
+					SELECT NO,TITLE,WRITER,WRITEDATE,HIT FROM BOARD 
+				<!-- MyBatis에서는 데이터 자동변환을 함.글자가 한 자이면 char로 인식  -->
+				<include refid="search"/>
+					ORDER BY NO DESC
+		))
+		WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+		</select>
+		
+		<!-- 검색 조건 쿼리 따로 저장-->
+		<sql id="search">
+			<!-- MyBatis에서는 데이터 자동변환을 함.글자가 한 자이면 char로 인식  -->
+			<if test="word != null and word.toString() != ''.toString()">
+				<!-- 검색할 데이터가 있으면 where 붙임 /   -->
+				<!-- #{word}만 있으면 제목이나 내용 전체를 검색해야 되므로 앞뒤로 %를 붙여줘야 부분 검색이 가능 -->
+				where 1 = 0
+				<if test = "key == 't'.toString()">
+	   		 		OR title like '%'|| #{word} || '%'
+	  			</if>
+				<if test = "key == 'c'.toString()">
+	   		 		OR content like '%'|| #{word} || '%'
+	  			</if>
+				<if test = "key == 'w'.toString()">
+	   		 		OR writer like '%'|| #{word} || '%'
+	  			</if>
+				<if test = "key == 'tc'">
+	   		 		OR title like  '%'|| #{word} || '%'
+	   		 		OR conent like '%'|| #{word} || '%'
+	  			</if>
+				<if test = "key == 'tw'">
+	   		 		OR title like '%'|| #{word} || '%'
+	   		 		OR writer like '%'|| #{word} || '%'
+	  			</if>
+				<if test = "key == 'cw'">
+	   		 		OR content like '%'|| #{word} || '%' 
+	   		 		OR writer like '%'|| #{word} || '%' 
+	  			</if>
+				<if test = "key == 'tcw'">
+	   		 		OR title like '%'|| #{word} || '%' 
+	   		 		OR content like '%'|| #{word} || '%' 
+	   		 		OR writer like '%'|| #{word} || '%'
+	  			</if>
+  			</if>
+		</sql>
+		
+	
+	
+	<!-- 1-2.게시판 전체 글의 갯수 -->
+	<select id = "getTotalRow" resultType = "java.lang.Long">
+		SELECT COUNT(*) FROM BOARD 
+		<!-- MyBatis에서는 데이터 자동변환을 함.글자가 한 자이면 char로 인식  -->
+		<include refid="search"/>
+	
 	</select>
 	
-<!-- 	2.BOARD view -->
+	<!-- 2-1.게시판 글보기 -->
 	<select id="view" resultType="org.zerock.board.vo.BoardVO">
-	SELECT NO,TITLE,CONTENT,WRITER,WRITEDATE,HIT FROM BOARD WHERE NO = #{no}
+		SELECT NO,TITLE,CONTENT,WRITER,WRITEDATE,HIT FROM BOARD WHERE NO = #{no}
 	</select>
 	
-<!-- 	3.BOARD write -->
-	<insert id="write">
-	INSERT INTO BOARD(NO,TITLE,CONTENT,WRITER)VALUES(BOARD_SEQ.NEXTVAL,#{title},#{content},#{writer}) 
-	</insert>
-	
-<!-- 	4.BOARD update -->
-	<update id="update" >
-	UPDATE BOARD SET TITLE = #{title}, CONTENT = #{content}, WRITER = #{writer}
-	WHERE NO = #{no}  
+	<!-- 2-2.게시판 조회수 1증가 -->
+	<update id="increase">
+		UPDATE BOARD SET HIT = HIT + 1
+		WHERE NO = #{no}
 	</update>
 	
-<!-- 	5.BOARD delete	 -->
+	<!-- 3.게시판 글작성 -->
+	<insert id="write">
+		INSERT INTO BOARD(NO,TITLE,CONTENT,WRITER,PW)
+		VALUES(BOARD_SEQ.NEXTVAL,#{title},#{content},#{writer},#{pw})
+	</insert>
+	
+	<!-- 4.게시판 글수정 -->
+	<update id="update">
+		UPDATE BOARD SET TITLE=#{title},CONTENT=#{content},WRITER=#{writer}
+		WHERE NO = #{no} AND PW = #{pw}
+	</update>	
+	<!-- 5.게시판 글삭제 -->
 	<delete id="delete">
-	DELETE FROM BOARD WHERE NO = #{no}
+		DELETE FROM BOARD WHERE NO = #{no} AND PW = #{pw}
 	</delete>
+
 </mapper>
